@@ -1,8 +1,6 @@
 from scheduler.core.action import Action
 
-
 class Mailbox:
-
     def __init__(self):
         self.inbox = []
         self.outbox = []

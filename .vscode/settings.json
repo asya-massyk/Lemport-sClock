@@ -1,0 +1,11 @@
+{
+  "python.analysis.extraPaths": [
+    ".",
+    "./scheduler"
+  ],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.linting.pylintEnabled": false,
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none"
+  }
+}

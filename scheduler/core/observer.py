@@ -9,9 +9,6 @@ from scheduler.settings.network_settings import settings
 
 
 class Observer:
-    """
-    A main class which runs simulation.
-    """
     network: AbstractNetwork
     nodes: dict[uuid.UUID, AbstractNode]
 
@@ -22,19 +19,34 @@ class Observer:
         self.network = network
         self.nodes = {node.node_id: node for node in nodes}
 
-    def process_action(self, action: Action):
-        if action.action_type == 'inbox':
-            print(f"Processing Action ID: {action.action_id}, DATA: {action}")
-            start = default_timer()
-            response = self.nodes[action.node_id].send(action)
-            for incoming_action in response.actions:
-                self.nodes[incoming_action.node_id].mailbox.add_inbox_action(incoming_action)
-                print(f"New incoming message for node {incoming_action.node_id} and data {incoming_action.data}")
-            print(f"Processed a message for node {action.node_id}. Time: {default_timer() - start} seconds\n")
-        else:
-            raise ValueError("Unknown action type")
+    def process_action(self, action: Action) -> None:
+        if action.action_type != 'inbox':
+            raise ValueError(f"Unknown action type: {action.action_type}")
 
-    def run(self):
+        print(f"Processing Action ID: {action.action_id}, DATA: {action}")
+        start = default_timer()
+
+        node = self.nodes.get(action.node_id)
+        if node is None:
+            print(f"Node {action.node_id} not found!")
+            return
+
+        response = node.send(action)
+
+        for incoming_action in response.actions:
+            target_node = self.nodes.get(incoming_action.node_id)
+            if target_node is not None and hasattr(target_node, 'mailbox'):
+                target_node.mailbox.add_inbox_action(incoming_action)
+                print(
+                    f"New incoming message for node {incoming_action.node_id} "
+                    f"with data {incoming_action.data}"
+                )
+            else:
+                print(f"Cannot deliver to node {incoming_action.node_id} — no mailbox")
+
+        print(f"Processed a message for node {action.node_id}. Time: {default_timer() - start:.4f} seconds\n")
+
+    def run(self) -> None:
         while True:
             action = self.network.get_action()
             if action:
@@ -44,9 +56,17 @@ class Observer:
                 except Exception as e:
                     print(f"Cannot process action {action}. Exception: {e}")
                     if settings.INTERRUPT_ON_ERROR:
-                        raise e
+                        raise
                 else:
-                    self.nodes.get(action.node_id).mailbox.remove_action(action)
+                    # безпечно видаляємо дію
+                    node = self.nodes.get(action.node_id)
+                    if node is not None and hasattr(node, 'mailbox'):
+                        node.mailbox.remove_action(action)
             else:
                 print("No available action found")
+                for node in self.nodes.values():
+                    if hasattr(node, 'visited') and hasattr(node, 'data'):
+                        print(f"Node {node.node_id}, Visited: {node.visited}, Data: {node.data}") # type: ignore
+                    else:
+                        print(f"Node {node.node_id} (абстрактний або без додаткових даних)")
             sleep(settings.ACTION_SLEEP_TIME_SECONDS)

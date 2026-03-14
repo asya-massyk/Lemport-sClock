@@ -12,28 +12,16 @@ class AbstractNetwork:
     request_generator: ExternalRequestGenerator
 
     def __init__(self, nodes: List[AbstractNode]):
-        """
-        If the external request mode is enabled, it initializes the request generator
-        :param nodes:
-        """
         if settings.EXTERNAL_REQUEST_MODE:
             self.request_generator = ExternalRequestGenerator(nodes)
 
-    def get_action(self) -> Action:
-        """
-        The method gathers actions from all nodes mailboxes and returns the random one
-        :return: random Action object
-        """
+    def get_action(self) -> Action | None:
         if settings.EXTERNAL_REQUEST_MODE:
             self.process_external_requests()
         actions = [action for node in self.nodes for action in node.mailbox.get_actions()]
         return choice(actions) if actions else None
 
     def process_external_requests(self) -> None:
-        """
-        The method obtains external requests and put them into mailboxes of nodes
-        :rtype: None
-        """
         external_requests = self.request_generator.get_requests()
         for external_request in external_requests:
             node_id, external_request_obj = next(iter(external_request.items()))

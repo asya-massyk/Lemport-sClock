@@ -10,22 +10,19 @@ from scheduler.core.mailbox import Mailbox
 
 class AbstractNode(Generator):
 
-    neighbors: List
-    mailbox:  Mailbox()
+    neighbors: List[uuid.UUID]
+    mailbox: Mailbox
     node_id: uuid.UUID
 
     @abstractmethod
     def process_action(self, message: Action) -> NodeResponse:
-        """
-        The method for internal processing of an action (transaction, message, etc.)
-        :rtype: NodeResponse object with list of outbox actions (messages)
-        :param message: inbox message to be processed by a node
-        """
+        """Обробка однієї дії (повідомлення)"""
         pass
 
     def send(self, value: Action) -> NodeResponse:
         if value is not None:
             return self.process_action(value)
+        return NodeResponse([])
 
     def throw(self, typ, val=None, tb=None):
-        super().throw(typ, val, tb)
+        raise NotImplementedError("throw() must be implemented in concrete node classes")

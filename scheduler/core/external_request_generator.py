@@ -9,7 +9,6 @@ from scheduler.abstract.abstract_node import AbstractNode
 from scheduler.core.external_request import ExternalRequest
 from scheduler.settings.network_settings import settings
 
-
 class ExternalRequestGenerator:
 
     def __init__(self, nodes: List[AbstractNode]):

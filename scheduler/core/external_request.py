@@ -2,12 +2,11 @@ import uuid
 from typing import Union, Any
 from uuid import UUID
 
-
 class ExternalRequest:
-    data: dict[str, {}]
+    data: dict[str, Any]
     transaction_id: uuid.UUID
 
-    def __init__(self, data: dict[str, {}], transaction_id) -> None:
+    def __init__(self, data: dict[str, Any], transaction_id) -> None:
         self.data = data
         self.transaction_id = transaction_id
 
