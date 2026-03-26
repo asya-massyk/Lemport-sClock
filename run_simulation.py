@@ -1,10 +1,13 @@
-from scheduler.core.observer import Observer
+import uuid
 from scheduler.implementation.current_network import CurrentNetwork
-
-# NETWORK_CLASS should be set to the current implementation network class
-NETWORK_CLASS = CurrentNetwork
+from scheduler.core.observer import Observer
 
 if __name__ == '__main__':
-    network = NETWORK_CLASS()
+    print("=== Запуск хвильового алгоритму ECHO ===")
+    print("Мережа створена. Запускаємо симуляцію...\n")
+    
+    network = CurrentNetwork()
     observer = Observer(network)
     observer.run()
+    
+    print("\n=== Симуляція завершена ===")

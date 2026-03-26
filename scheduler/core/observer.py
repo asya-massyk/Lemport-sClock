@@ -1,5 +1,4 @@
 import uuid
-from time import sleep
 from timeit import default_timer
 
 from scheduler.abstract.abstract_network import AbstractNetwork
@@ -13,17 +12,18 @@ class Observer:
     nodes: dict[uuid.UUID, AbstractNode]
 
     def __init__(self, network: AbstractNetwork):
-        nodes = network.nodes
-        if nodes is None or len(nodes) < settings.NODES_NUMBER_MIN:
+        if network.nodes is None or len(network.nodes) < settings.NODES_NUMBER_MIN:
             raise ValueError("The observer must have at least two nodes")
+
         self.network = network
-        self.nodes = {node.node_id: node for node in nodes}
+        self.nodes = {node.node_id: node for node in network.nodes}
 
     def process_action(self, action: Action) -> None:
         if action.action_type != 'inbox':
-            raise ValueError(f"Unknown action type: {action.action_type}")
+            print(f"Пропущено дію не-inbox типу: {action.action_type}")
+            return
 
-        print(f"Processing Action ID: {action.action_id}, DATA: {action}")
+        print(f"Processing Action ID: {action.action_id} | Type: {action.data.get('type', 'unknown')}")
         start = default_timer()
 
         node = self.nodes.get(action.node_id)
@@ -47,26 +47,32 @@ class Observer:
         print(f"Processed a message for node {action.node_id}. Time: {default_timer() - start:.4f} seconds\n")
 
     def run(self) -> None:
+        print("Observer запущено. Починаємо обробку дій...\n")
+        processed_count = 0
+
         while True:
             action = self.network.get_action()
-            if action:
-                print(action)
+
+            if not action:
+                print("\nNo available action found — черги порожні.")
+                break
+
+            print(f"→ Обрано дію: {action.action_id} | Node: {action.node_id} | Type: {action.action_type}")
+
+            try:
+                self.process_action(action)
+                processed_count += 1
+            except Exception as e:
+                print(f"Помилка обробки дії {action.action_id}: {e}")
+                if settings.INTERRUPT_ON_ERROR:
+                    raise
+
+            # Видаляємо оброблену дію
+            node = self.nodes.get(action.node_id)
+            if node and hasattr(node, 'mailbox'):
                 try:
-                    self.process_action(action)
-                except Exception as e:
-                    print(f"Cannot process action {action}. Exception: {e}")
-                    if settings.INTERRUPT_ON_ERROR:
-                        raise
-                else:
-                    # безпечно видаляємо дію
-                    node = self.nodes.get(action.node_id)
-                    if node is not None and hasattr(node, 'mailbox'):
-                        node.mailbox.remove_action(action)
-            else:
-                print("No available action found")
-                for node in self.nodes.values():
-                    if hasattr(node, 'visited') and hasattr(node, 'data'):
-                        print(f"Node {node.node_id}, Visited: {node.visited}, Data: {node.data}") # type: ignore
-                    else:
-                        print(f"Node {node.node_id} (абстрактний або без додаткових даних)")
-            sleep(settings.ACTION_SLEEP_TIME_SECONDS)
+                    node.mailbox.remove_action(action)
+                except (ValueError, Exception):
+                    pass  # дія вже видалена
+
+        print(f"\nСимуляція завершена. Оброблено дій: {processed_count}")

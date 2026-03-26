@@ -15,11 +15,26 @@ class AbstractNetwork:
         if settings.EXTERNAL_REQUEST_MODE:
             self.request_generator = ExternalRequestGenerator(nodes)
 
+
     def get_action(self) -> Action | None:
         if settings.EXTERNAL_REQUEST_MODE:
             self.process_external_requests()
-        actions = [action for node in self.nodes for action in node.mailbox.get_actions()]
-        return choice(actions) if actions else None
+
+    # 🥇 Спочатку inbox
+        inbox_actions = [
+            action for node in self.nodes for action in node.mailbox.inbox
+        ]
+        if inbox_actions:
+            return choice(inbox_actions)
+
+    # 🥈 Потім outbox
+        outbox_actions = [
+            action for node in self.nodes for action in node.mailbox.outbox
+        ]
+        if outbox_actions:
+            return choice(outbox_actions)
+
+        return None
 
     def process_external_requests(self) -> None:
         external_requests = self.request_generator.get_requests()
