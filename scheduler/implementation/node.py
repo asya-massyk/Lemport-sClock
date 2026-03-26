@@ -7,7 +7,6 @@ from scheduler.core.mailbox import Mailbox
 from scheduler.core.node_response import NodeResponse
 
 class EchoNode(AbstractNode):
-    """Echo алгоритм — відполірований"""
 
     def __init__(self, node_id: uuid.UUID, neighbors: List[uuid.UUID], is_initiator: bool = False):
         self.node_id = node_id
@@ -23,7 +22,6 @@ class EchoNode(AbstractNode):
         self.sent_to: set[uuid.UUID] = set()
 
     def process_action(self, message: Action) -> NodeResponse:
-        # ❗ Ігноруємо після завершення
         if self.decided:
             return NodeResponse([])
 
@@ -33,7 +31,6 @@ class EchoNode(AbstractNode):
 
         outgoing: List[Action] = []
 
-        # 🚀 Ініціатор
         if msg_type == "init" and self.is_initiator:
             print(f"Ініціатор {self.node_id} запускає хвилю Echo")
 
@@ -52,14 +49,12 @@ class EchoNode(AbstractNode):
         if self.parent is None and not self.is_initiator:
             self.parent = sender
 
-        # 📤 Розсилка
         for r in self.neighbors:
             if r != sender and r not in self.sent_to:
                 act = Action({"type": "wave", "from": self.node_id}, r, uuid.uuid4())
                 outgoing.append(act)
                 self.sent_to.add(r)
 
-        # ✅ Завершення
         if self.received == self.degree:
             if not self.is_initiator and self.parent is not None:
                 if self.parent not in self.sent_to:
@@ -73,7 +68,6 @@ class EchoNode(AbstractNode):
         return NodeResponse(outgoing)
 
 class TreeNode(AbstractNode):
-    """Хвильовий алгоритм Tree — відполірована версія"""
 
     def __init__(self, node_id: uuid.UUID, neighbors: List[uuid.UUID]):
         self.node_id = node_id
@@ -88,7 +82,7 @@ class TreeNode(AbstractNode):
         self.is_initiator = False
 
     def process_action(self, message: Action) -> NodeResponse:
-        # ❗ Ігноруємо все після завершення
+
         if self.decided:
             return NodeResponse([])
 
@@ -98,7 +92,6 @@ class TreeNode(AbstractNode):
 
         outgoing: List[Action] = []
 
-        # 🚀 Старт
         if msg_type == "start":
             self.is_initiator = True
             print(f"Ініціатор Tree {self.node_id} запускає хвилю")
@@ -113,20 +106,17 @@ class TreeNode(AbstractNode):
         if msg_type != "wave" or sender is None:
             return NodeResponse([])
 
-        # 📥 Отримали повідомлення
         self.received_from.add(sender)
 
         if self.parent is None and not self.is_initiator:
             self.parent = sender
 
-        # 📤 Розсилка дітям (без дублів)
         for r in self.neighbors:
             if r != self.parent and r not in self.sent_to:
                 act = Action({"type": "wave", "from": self.node_id}, r, uuid.uuid4())
                 outgoing.append(act)
                 self.sent_to.add(r)
 
-        # ✅ Перевірка завершення
         expected = len(self.neighbors) - (1 if self.parent is not None else 0)
 
         if len(self.received_from) >= expected:
@@ -143,5 +133,5 @@ class TreeNode(AbstractNode):
 
         return NodeResponse(outgoing)
 
-# Для сумісності
+
 CurrentNode = EchoNode

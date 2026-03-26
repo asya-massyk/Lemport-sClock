@@ -92,5 +92,5 @@ class TreeNetwork(AbstractNetwork):
 
 
 # Вибір алгоритму
-CurrentNetwork = EchoNetwork      # Echo
-#CurrentNetwork = TreeNetwork    # Tree
+CurrentNetwork = EchoNetwork     
+#CurrentNetwork = TreeNetwork    
