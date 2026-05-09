@@ -1,7 +1,7 @@
 import uuid
 from abc import abstractmethod
 from collections.abc import Generator
-from typing import List
+from typing import List, Dict, Any, Tuple
 
 from scheduler.core.action import Action
 from scheduler.core.node_response import NodeResponse
@@ -16,7 +16,17 @@ class AbstractNode(Generator):
 
     @abstractmethod
     def process_action(self, message: Action) -> NodeResponse:
-        """Обробка однієї дії (повідомлення)"""
+        pass
+
+    @abstractmethod
+    def get_routing_table(self) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    def start_algo(self) -> List[Tuple[uuid.UUID, dict]]:
+        pass
+
+    def start(self):
         pass
 
     def send(self, value: Action) -> NodeResponse:
@@ -25,4 +35,4 @@ class AbstractNode(Generator):
         return NodeResponse([])
 
     def throw(self, typ, val=None, tb=None):
-        raise NotImplementedError("throw() must be implemented in concrete node classes")
+        raise NotImplementedError()
